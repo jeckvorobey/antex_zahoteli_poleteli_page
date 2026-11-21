@@ -14,7 +14,7 @@
 
 
 	<title>Захотели — Полетели · Telegram-сообщества в Грузии, Вьетнаме и Таиланде</title>
-	<link rel="icon" type="image/jpeg" href="assets/avatar-useful-chats.jpg"/>
+	<link rel="icon" sizes="32x32" type="image/x-icon" href="assets/favicon-useful-chats.ico"/>
 	<meta name="title" content="Захотели — Полетели · Telegram-сообщества в Грузии, Вьетнаме и Таиланде"><meta name="description" content="Местные Telegram-сообщества в шести городах Грузии, Вьетнама и Таиланда: городские и женские чаты, аренда и барахолки."><meta name="language" content="ru"><meta property="og:type"  content="article"><meta property="og:title"  content="Захотели — Полетели · Telegram-сообщества в Грузии, Вьетнаме и Таиланде"><meta property="og:description"  content="Местные Telegram-сообщества в шести городах Грузии, Вьетнама и Таиланда: городские и женские чаты, аренда и барахолки."><meta name="twitter:title" content="Захотели — Полетели · Telegram-сообщества в Грузии, Вьетнаме и Таиланде"><meta name="twitter:description" content="Местные Telegram-сообщества в шести городах Грузии, Вьетнама и Таиланда: городские и женские чаты, аренда и барахолки."><meta name="twitter:card" content="summary_large_image">
 
 	<style>
@@ -55,7 +55,7 @@
 <link rel="stylesheet" href="assets/fonts.css?v=0a5d464d5eb4">
 <link rel="stylesheet" href="assets/tokens.css?v=ab4ea01b8b30">
 <link rel="stylesheet" href="assets/bundle.css?v=b89f3011c032">
-<link rel="stylesheet" href="assets/landing.css?v=802da0de8614">
+<link rel="stylesheet" href="assets/landing.css?v=82e034f1a12e">
 <link rel="stylesheet" href="assets/motion.css?v=7b7390c85b36">
 <script defer src="assets/bundle.js?v=cfde96a77092"></script>
 <script defer src="assets/gsap.min.js?v=96c01b81f44a"></script>
@@ -1458,8 +1458,8 @@
 .lp-note__arrow { inline-size: clamp(3.5rem, 6cqi, 6.5rem); flex: none; fill: none; stroke: currentColor; stroke-width: 3; stroke-linecap: round; stroke-linejoin: round; translate: 0 45%; overflow: visible; }
 .lp-note__arrow path { stroke-dasharray: 1; }
 :scope.lp-ready.lp-anim .lp-note:not([data-in]) .lp-note__arrow path { stroke-dashoffset: 1; }
-:scope.lp-anim .lp-note[data-in] .lp-note__arrow path { animation: lp-dash 1.1s var(--ease-in-out) both; animation-delay: calc(var(--d, 0ms) + 600ms); }
-:scope.lp-anim .lp-note[data-in] .lp-note__arrow path + path { animation-duration: 600ms; animation-delay: calc(var(--d, 0ms) + 1.6s); }
+:scope.lp-anim .lp-note[data-in] .lp-note__arrow path { animation: lp-dash 1.1s var(--ease-in-out) both; animation-delay: calc(var(--d, 0ms) + var(--writing-duration)); }
+:scope.lp-anim .lp-note[data-in] .lp-note__arrow path + path { animation-duration: 600ms; animation-delay: calc(var(--d, 0ms) + var(--writing-duration) + 1.1s); }
 :scope.lp-anim .lp-note__arrow path { stroke-dashoffset: 1; }
 .lp-facts__list { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); margin: 0; border-block-start: 1px solid var(--line); }
 .lp-fact { display: flex; flex-direction: column-reverse; justify-content: flex-end; gap: 0.6rem; padding-block-start: clamp(1.25rem, 2.6cqi, 2.5rem); padding-inline-end: 1rem; }

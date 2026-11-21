@@ -449,8 +449,8 @@ html.lp-scrub .lp-manifesto .lp-w { opacity: clamp(0.14, calc((var(--p, 1) * (va
 .lp-note__arrow { inline-size: clamp(3.5rem, 6cqi, 6.5rem); flex: none; fill: none; stroke: currentColor; stroke-width: 3; stroke-linecap: round; stroke-linejoin: round; translate: 0 45%; overflow: visible; }
 .lp-note__arrow path { stroke-dasharray: 1; }
 html.lp-ready.lp-anim .lp-note:not([data-in]) .lp-note__arrow path { stroke-dashoffset: 1; }
-html.lp-anim .lp-note[data-in] .lp-note__arrow path { animation: lp-dash 1.1s var(--ease-in-out) both; animation-delay: calc(var(--d, 0ms) + 600ms); }
-html.lp-anim .lp-note[data-in] .lp-note__arrow path + path { animation-duration: 600ms; animation-delay: calc(var(--d, 0ms) + 1.6s); }
+html.lp-anim .lp-note[data-in] .lp-note__arrow path { animation: lp-dash 1.1s var(--ease-in-out) both; animation-delay: calc(var(--d, 0ms) + var(--writing-duration)); }
+html.lp-anim .lp-note[data-in] .lp-note__arrow path + path { animation-duration: 600ms; animation-delay: calc(var(--d, 0ms) + var(--writing-duration) + 1.1s); }
 html.lp-anim .lp-note__arrow path { stroke-dashoffset: 1; }
 .lp-facts__list { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); margin: 0; border-block-start: 1px solid var(--line); }
 .lp-fact { display: flex; flex-direction: column-reverse; justify-content: flex-end; gap: 0.6rem; padding-block-start: clamp(1.25rem, 2.6cqi, 2.5rem); padding-inline-end: 1rem; }
