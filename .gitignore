@@ -11,3 +11,5 @@
 !/dist/assets/*.png
 !/dist/assets/*.ttf
 !/dist/assets/OFL-*.txt
+!/dist/assets/*-postcard.mp4
+!/dist/assets/*-postcard.jpg

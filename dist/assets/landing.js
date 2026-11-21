@@ -108,6 +108,59 @@
     };
     requestAnimationFrame(step);
   }
+  // Границы строк берём у браузера, чтобы сохранить его переносы и неразрывные пробелы.
+  function writeWrapped(el, delay) {
+    const text = el.firstChild;
+    if (!text || text !== el.lastChild || text.nodeType !== Node.TEXT_NODE) return;
+    const range = document.createRange();
+    range.selectNodeContents(text);
+    if (range.getClientRects().length < 2) return;
+
+    const duration = parseFloat(getComputedStyle(el).getPropertyValue("--writing-duration"));
+    const start = performance.now() + delay;
+    el.setAttribute("data-write-lines", "active");
+    function render() {
+      el.replaceChildren(text);
+      el.style.removeProperty("--writing-width");
+      const width = getComputedStyle(el).width;
+      range.setStart(text, 0);
+      const breaks = [0];
+      for (let end = 1; end <= text.length; end++) {
+        range.setEnd(text, end);
+        if (range.getClientRects().length > breaks.length) breaks.push(end - 1);
+      }
+      breaks.push(text.length);
+      const lines = breaks.slice(1).map((end, i) => {
+        const line = document.createElement("span");
+        line.className = "lp-writing-line";
+        line.textContent = text.data.slice(breaks[i], end);
+        return line;
+      });
+      el.style.setProperty("--writing-width", width);
+      el.replaceChildren(...lines.flatMap((line, i) => i ? [document.createElement("br"), line] : [line]));
+      const widths = lines.map(line => parseFloat(getComputedStyle(line).width));
+      const total = widths.reduce((sum, length) => sum + length, 0);
+      if (!total) return;
+      let offset = start - performance.now();
+      lines.forEach((line, i) => {
+        const time = duration * widths[i] / total;
+        line.animate([
+          { clipPath: "inset(-0.5em 100% -0.5em 0)" },
+          { clipPath: "inset(-0.5em -0.04em -0.5em -0.5em)" },
+        ], { duration: time, delay: offset, easing: "linear", fill: "backwards" });
+        offset += time;
+      });
+    }
+    render();
+    window.addEventListener("resize", render);
+    setTimeout(() => {
+      window.removeEventListener("resize", render);
+      el.setAttribute("data-write-lines", "done");
+      el.replaceChildren(text);
+      el.style.removeProperty("--writing-width");
+    }, delay + duration);
+  }
+
   if (ANIM && IO) {
     $$(".lp-count").forEach((c) => { c.textContent = "0"; });
     const rio = new IntersectionObserver((entries) => {
@@ -116,6 +169,19 @@
       ins.forEach((el, i) => {
         const d = i * 110;
         el.style.setProperty("--d", d + "ms");
+        if (el.matches(".lp-script, .lp-cta__script")) writeWrapped(el, d);
+        if (el.matches(".lp-note") && el.firstElementChild) writeWrapped(el.firstElementChild, d);
+        if (el.matches(".lp-script:not([data-write-lines])")) {
+          // Маска проходит только по надписи, включая текст, перенесённый на несколько строк.
+          const range = document.createRange();
+          range.selectNodeContents(el);
+          const text = range.getBoundingClientRect();
+          const box = el.getBoundingClientRect();
+          if (box.width) {
+            el.style.setProperty("--write-start", (box.right - text.left) / box.width * 100 + "%");
+            el.style.setProperty("--write-end", (box.right - text.right) / box.width * 100 + "%");
+          }
+        }
         el.setAttribute("data-in", "");
         rio.unobserve(el);
         const c = el.querySelector(".lp-count");
@@ -153,11 +219,36 @@
 
   // истории: колода, верхняя карточка улетает в сторону
   const stories = $(".lp-stories"), cards = $$(".lp-story"), deckCount = $(".lp-stories__count b");
+  const videos = new Map();
+  const watchVideo = IO && new IntersectionObserver(entries => {
+    for (const entry of entries) if (!entry.isIntersecting) entry.target.pause();
+  });
+  for (const card of cards) {
+    const video = $("video", card), play = $(".lp-postcard__play", card);
+    if (!video || !play) continue;
+    videos.set(card, video);
+    play.hidden = false;
+    play.addEventListener("click", () => {
+      play.hidden = true;
+      video.focus();
+      video.play().catch(() => { play.hidden = false; play.focus(); });
+    });
+    video.addEventListener("play", () => {
+      play.hidden = true;
+      for (const other of videos.values()) if (other !== video && !other.paused) other.pause();
+    });
+    if (watchVideo) watchVideo.observe(video);
+  }
   const deckScene = stories && cards.length > 1 && scene({
     target: (vh) => { const r = stories.getBoundingClientRect(), total = r.height - vh; return total > 0 ? clamp(-r.top / total) : 0; },
     render: (p, vh) => {
       const n = cards.length, P = clamp((p - 0.08) / 0.84) * (n - 1);
+      const active = Math.round(P);
       cards.forEach((c, i) => {
+        const inactive = i !== active;
+        if (c.inert !== inactive) c.inert = inactive;
+        const video = videos.get(c);
+        if (inactive && video && !video.paused) video.pause();
         const d = i - P, side = i % 2 ? 1 : -1;
         let tx = 0, ty, r, s = 1, o;
         if (d >= 0) { const m = Math.min(d, 3); ty = m * 18; s = 1 - m * 0.045; r = side * 1.6 * m; o = clamp(4 - d); }
@@ -259,6 +350,235 @@
     { code: "UTP", city: "Паттайя", country: "Таиланд", flight: "ZP 301", seat: "барахолка" },
   ];
   const hero = $(".lp-hero");
+  const heroWord = $(".lp-hero__big");
+  if (hero && heroWord) {
+    const title = heroWord.parentElement;
+    const inner = title.parentElement;
+    const kicker = $(".lp-hero__kicker", inner);
+    const alignTitle = new ResizeObserver(() => {
+      // Исходные координаты сетки сохраняются при визуальном подъёме групп.
+      const top = parseFloat(getComputedStyle(title).top);
+      const flowTop = title.offsetTop - top;
+      if (kicker && header) inner.style.setProperty("--hero-headroom", kicker.offsetTop - top - header.offsetHeight + "px");
+      const belowWord = hero.offsetHeight - flowTop - heroWord.offsetHeight / 2;
+      inner.style.setProperty("--hero-below-word", belowWord + "px");
+    });
+    alignTitle.observe(inner);
+    alignTitle.observe(heroWord);
+    alignTitle.observe($(".lp-hero__bottom", inner));
+  }
+
+  // Общий слой хранит все пройденные точки; у каждого самолёта своя кривая и скорость.
+  const route = $(".lp-hero__route");
+  const trails = ANIM && route ? document.createElement("canvas") : null;
+  const ctx = trails?.getContext("2d");
+  if (ctx) {
+    const plane = $(".lp-route-plane", route);
+    const header = $(".lp-header");
+    const randomPoint = () => ({ x: Math.random(), y: Math.random() });
+    const middle = (a, b) => ({ x: (a.x + b.x) / 2, y: (a.y + b.y) / 2 });
+    let left, top, areaWidth, areaHeight, scale, speed;
+    let previous = 0, frame = 0, visible = !IO, initialized = false;
+
+    function nextPoint(a, b) {
+      const dx = b.x - a.x, dy = b.y - a.y;
+      let point;
+      for (let attempt = 0; attempt < 32; attempt++) {
+        point = randomPoint();
+        const nx = point.x - b.x, ny = point.y - b.y;
+        const span = Math.hypot(nx, ny);
+        if (span > 0.36 && (dx * nx + dy * ny) > -0.88 * Math.hypot(dx, dy) * span) break;
+      }
+      return point;
+    }
+
+    let mouse = null, follower = null;
+    const flights = Array.from({ length: 3 }, (_, index) => {
+      const node = index ? plane.cloneNode(true) : plane;
+      if (index) route.append(node);
+      node.classList.add("is-flying");
+      const a = randomPoint(), b = randomPoint(), c = nextPoint(a, b);
+      return { node, start: middle(a, b), control: b, next: c, end: middle(b, c),
+        t: Math.random() * 0.6, pace: 0.88 + Math.random() * 0.24, untilDot: 0 };
+    });
+
+    // Координата и касательная квадратичной кривой в долях рабочей области.
+    function pose(f) {
+      const u = 1 - f.t;
+      return {
+        x: u * u * f.start.x + 2 * u * f.t * f.control.x + f.t * f.t * f.end.x,
+        y: u * u * f.start.y + 2 * u * f.t * f.control.y + f.t * f.t * f.end.y,
+        dx: 2 * (u * (f.control.x - f.start.x) + f.t * (f.end.x - f.control.x)) * areaWidth,
+        dy: 2 * (u * (f.control.y - f.start.y) + f.t * (f.end.y - f.control.y)) * areaHeight,
+      };
+    }
+    function position(f, p) {
+      f.current = p;
+      const angle = Math.atan2(p.dy, p.dx) * 180 / Math.PI;
+      f.node.setAttribute("transform", `translate(${left + p.x * areaWidth} ${top + p.y * areaHeight}) rotate(${angle}) scale(${scale})`);
+    }
+    function mark(p) {
+      ctx.beginPath();
+      ctx.ellipse(p.x * trails.width, p.y * trails.height,
+        1.35 * trails.width / areaWidth, 1.35 * trails.height / areaHeight, 0, 0, Math.PI * 2);
+      ctx.fill();
+    }
+    function advance(f, travel) {
+      let p = pose(f);
+      while (travel > 0.001) {
+        if (f.untilDot <= 0.001) { mark(p); f.untilDot = 13; }
+        const tangent = Math.max(1, Math.hypot(p.dx, p.dy));
+        const dt = Math.min(1 - f.t, 0.05, Math.min(travel, f.untilDot) / tangent);
+        const step = dt * tangent;
+        f.t += dt;
+        travel -= step;
+        f.untilDot -= step;
+        if (f.t >= 1) {
+          f.start = f.end;
+          const target = nextPoint(f.control, f.next);
+          f.control = f.next;
+          f.next = target;
+          f.end = middle(f.control, target);
+          f.t = 0;
+        }
+        p = pose(f);
+      }
+      position(f, p);
+    }
+    function follow(f, elapsed, time) {
+      const p = f.current;
+      const targetX = clamp(mouse.x + 22 * Math.sin(time / 337) + 9 * Math.sin(time / 593), 0, areaWidth);
+      const targetY = clamp(mouse.y + 19 * Math.cos(time / 401) + 8 * Math.sin(time / 271), 0, areaHeight);
+      const blend = 1 - Math.exp(-elapsed * 6);
+      const dx = (targetX - p.x * areaWidth) * blend, dy = (targetY - p.y * areaHeight) * blend;
+      const distance = Math.hypot(dx, dy);
+      if (!distance) return;
+      for (; f.untilDot <= distance; f.untilDot += 13) {
+        const part = f.untilDot / distance;
+        mark({ x: p.x + part * dx / areaWidth, y: p.y + part * dy / areaHeight });
+      }
+      f.untilDot -= distance;
+      position(f, { x: p.x + dx / areaWidth, y: p.y + dy / areaHeight, dx, dy });
+    }
+    function release() {
+      mouse = null;
+      if (!follower) return;
+      const p = follower.current;
+      const length = Math.max(0.001, Math.hypot(p.dx, p.dy));
+      const reach = Math.min(areaWidth, areaHeight) * 0.2;
+      follower.start = { x: p.x, y: p.y };
+      follower.control = { x: clamp(p.x + reach * p.dx / length / areaWidth, 0, 1),
+        y: clamp(p.y + reach * p.dy / length / areaHeight, 0, 1) };
+      follower.next = nextPoint(follower.start, follower.control);
+      follower.end = middle(follower.control, follower.next);
+      follower.t = 0;
+      follower = null;
+    }
+    function tint() {
+      ctx.fillStyle = getComputedStyle(plane).fill;
+      ctx.globalCompositeOperation = "source-in";
+      ctx.fillRect(0, 0, trails.width, trails.height);
+      ctx.globalCompositeOperation = "source-over";
+    }
+    function resize() {
+      release();
+      const { width, height } = route.getBoundingClientRect();
+      if (!width || !height) return;
+      scale = 2 * Math.max(width / 1440, height / 900);
+      left = Math.min(width / 5, 22 * scale);
+      top = Math.min(height * 0.45, header.offsetHeight + left);
+      areaWidth = width - 2 * left;
+      areaHeight = Math.max(1, Math.min(height, innerHeight) - left - top);
+      speed = clamp(Math.hypot(width, areaHeight) / 7, 85, 200);
+      route.setAttribute("viewBox", `0 0 ${width} ${height}`);
+      Object.assign(trails.style, { left: left + "px", top: top + "px",
+        width: areaWidth + "px", height: areaHeight + "px" });
+      if (!initialized) {
+        // Буфер выделяется один раз; при resize масштабируется вместе с координатами самолётов.
+        const density = Math.min(devicePixelRatio || 1, 2, 2048 / Math.max(areaWidth, areaHeight));
+        trails.width = Math.max(1, Math.round(areaWidth * density));
+        trails.height = Math.max(1, Math.round(areaHeight * density));
+        tint();
+        initialized = true;
+      }
+      flights.forEach(f => position(f, pose(f)));
+    }
+    function tick(time) {
+      const elapsed = previous ? Math.min(time - previous, 100) / 1000 : 0;
+      previous = time;
+      if (mouse && !follower) {
+        follower = flights.find(f => Math.hypot(f.current.x * areaWidth - mouse.x,
+          f.current.y * areaHeight - mouse.y) <= 14 * scale);
+      }
+      for (const f of flights) {
+        if (f === follower) follow(f, elapsed, time);
+        else advance(f, elapsed * speed * f.pace);
+      }
+      frame = requestAnimationFrame(tick);
+    }
+    function syncFlight() {
+      if (!visible || document.hidden) release();
+      cancelAnimationFrame(frame);
+      previous = 0;
+      if (visible && !document.hidden) frame = requestAnimationFrame(tick);
+    }
+
+    trails.className = "lp-hero__trails";
+    route.before(trails);
+    $(".lp-route-line", route).style.display = "none";
+    resize();
+    const observer = new ResizeObserver(resize);
+    observer.observe(route);
+    observer.observe(header);
+    window.addEventListener("resize", resize);
+    function updateMouse(clientX, clientY) {
+      const bounds = route.getBoundingClientRect();
+      if (clientX < bounds.left || clientX >= bounds.right || clientY < bounds.top || clientY >= bounds.bottom) {
+        release();
+        return;
+      }
+      mouse = { clientX, clientY, x: clientX - bounds.left - left, y: clientY - bounds.top - top };
+    }
+    hero.addEventListener("pointermove", event => {
+      if (event.pointerType === "mouse") updateMouse(event.clientX, event.clientY);
+    });
+    hero.addEventListener("pointerleave", release);
+    hero.addEventListener("pointercancel", release);
+    window.addEventListener("blur", release);
+    window.addEventListener("scroll", () => {
+      if (mouse) updateMouse(mouse.clientX, mouse.clientY);
+    }, { passive: true });
+    new MutationObserver(tint).observe(root, { attributes: true, attributeFilter: ["data-theme"] });
+    if (IO) new IntersectionObserver(([entry]) => {
+      visible = entry.isIntersecting;
+      syncFlight();
+    }).observe(route);
+    document.addEventListener("visibilitychange", syncFlight);
+    syncFlight();
+  }
+  const cityTrack = $(".lp-hero .lp-marquee__track");
+  if (cityTrack) {
+    // В разметке две одинаковые последовательности; дополнительные копии заполняют широкие экраны.
+    const items = Array.from(cityTrack.children);
+    const sequence = items.slice(0, items.length / 2);
+    const copies = [];
+    function fillMarquee() {
+      const width = cityTrack.parentElement.clientWidth;
+      const period = items[sequence.length].getBoundingClientRect().left - items[0].getBoundingClientRect().left;
+      if (period <= 0) return;
+      const extra = Math.max(0, Math.ceil(width / period) - 1);
+      while (copies.length < extra) {
+        const copy = sequence.map(item => item.cloneNode(true));
+        cityTrack.append(...copy);
+        copies.push(copy);
+      }
+      while (copies.length > extra) copies.pop().forEach(item => item.remove());
+      cityTrack.style.setProperty("--marquee-end", -period + "px");
+    }
+    fillMarquee();
+    new ResizeObserver(fillMarquee).observe(cityTrack.parentElement);
+    document.fonts.ready.then(fillMarquee);
+  }
   const passBox = $(".lp-hero__pass");
   const passCode = $('[data-pass="code"]');
   const field = (k) => $(`[data-pass="${k}"]`);
@@ -295,10 +615,6 @@
       passBox.addEventListener("pointerenter", () => { hover = true; });
       passBox.addEventListener("pointerleave", () => { hover = false; });
     }
-
-    // самолёт летит по пунктиру, пунктир прорисовывается за ним (маска в CSS — тот же темп)
-    const plane = $(".lp-route-plane"), flight = plane && plane.querySelector("animateMotion");
-    if (flight && flight.beginElement) setTimeout(() => { plane.classList.add("is-flying"); flight.beginElement(); }, 1200);
 
     // талон чуть поворачивается за указателем
     if (FINE && passBox) {

@@ -7,7 +7,6 @@
   const gsap = window.gsap;
   gsap.registerPlugin(window.CustomEase);
   const ease = CustomEase.create("poleteliOut", "0.22,1,0.36,1");
-  const easeInOut = CustomEase.create("poleteliInOut", "0.65,0,0.35,1");
   root.classList.add("lp-gsap");
 
   const rise = (target, duration, delay) => gsap.fromTo(target,
@@ -19,9 +18,6 @@
     { opacity: 0, y: "0.45em", filter: "blur(0.06em)" },
     { opacity: 1, y: 0, filter: "blur(0em)", duration: 1.3, delay: 0.3,
       stagger: 0.07, ease, clearProps: "transform,opacity,filter" });
-  gsap.fromTo(".lp-hero__script",
-    { clipPath: "inset(-25% 100% -25% -8%)" },
-    { clipPath: "inset(-25% -8% -25% -8%)", duration: 1.7, delay: 1.05, ease: easeInOut });
   rise(".lp-hero__lead", 1.2, 1.35);
   rise(".lp-hero__actions", 1.2, 1.5);
   gsap.fromTo(".lp-hero__pass",
@@ -34,7 +30,7 @@
   // Скрипт прототипа отмечает вошедшие блоки и рассчитывает задержки каскада.
   const show = (el) => {
     const delay = parseFloat(el.style.getPropertyValue("--d") || "0") / 1000;
-    if (el.hasAttribute("data-reveal")) rise(el, 1.1, delay);
+    if (el.matches("[data-reveal]:not(.lp-script, .lp-cta__script, .lp-note)")) rise(el, 1.1, delay);
     if (el.hasAttribute("data-split")) {
       const words = Array.from(el.querySelectorAll(".lp-w__i"));
       if (!words.length) return;
