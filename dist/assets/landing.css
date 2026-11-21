@@ -615,7 +615,9 @@ html.lp-anim .lp-note__arrow path { stroke-dashoffset: 1; }
 
 /* ================================================================ 5. как это работает: телефон и шаги */
 .lp-how__grid { display: grid; gap: clamp(2rem, 4cqi, 4rem); }
+.lp-how .lp-head { margin: 0; }
 .lp-how__stage { display: none; }
+.lp-how__guide > .lp-head__aside { margin-block-end: var(--lp-gap); }
 .lp-steps { list-style: none; margin: 0; padding: 0; display: grid; gap: clamp(3rem, 7cqi, 4.5rem); }
 .lp-step { display: grid; gap: 0.75rem; justify-items: start; padding-block-start: 1.5rem; border-block-start: 1px solid var(--line); }
 .lp-step__num { font: 800 clamp(3.25rem, 1.6rem + 5cqi, 7rem) / 0.82 var(--font-display); letter-spacing: -0.05em; color: transparent; -webkit-text-stroke: 1.5px var(--ink-subtle); transition: color 700ms var(--ease-lp), -webkit-text-stroke-color 700ms var(--ease-lp); }
@@ -624,16 +626,24 @@ html.lp-anim .lp-note__arrow path { stroke-dashoffset: 1; }
 .lp-step__text { margin: 0; max-inline-size: 38ch; color: var(--ink-muted); font: 500 var(--text-l) / 1.5 var(--font-text); }
 .lp-step__screen { margin-block-start: 1rem; }
 .lp-step__screen:empty { display: none; }
-@container page (width >= 64rem) {
-  .lp-how__grid { grid-template-columns: minmax(0, 1fr) minmax(0, 1.1fr); gap: 8cqi; align-items: start; }
-  .lp-how__stage {
-    display: grid; place-items: center; position: sticky;
-    inset-block-start: calc(50svh - var(--pw) * 1.025 + 1.5rem);
-    --pw: min(clamp(16rem, 9rem + 9cqi, 20rem), 36svh);
+@media (min-height: 40rem) {
+  @container page (width >= 64rem) {
+    .lp-how__grid { grid-template-columns: minmax(0, 1fr) minmax(0, 1.1fr); gap: 6cqi; align-items: start; }
+    .lp-how__pin {
+      position: sticky; inset-block-start: calc(var(--lp-header-height, var(--header-h)) + 1rem);
+      display: grid; gap: clamp(1rem, 3svh, 3rem);
+    }
+    .lp-how .lp-title { font-size: min(var(--fs-title), 8.5cqi, 9svh); }
+    .lp-how .lp-script { font-size: min(var(--fs-script), 4.2svh); }
+    .lp-how__stage { display: grid; justify-items: center; --pw: min(20rem, 29svh); }
+    .lp-how__guide { padding-block-end: 12svh; }
+    .lp-how__guide > .lp-head__aside { margin: clamp(2rem, 9svh, 8rem) 0 0 auto; }
+    .lp-steps { gap: 0; }
+    .lp-step { min-block-size: 76svh; align-content: center; padding: 0; border: 0; }
+    html.lp-anim .lp-step { transition: opacity 260ms ease-in-out; }
+    html.lp-anim .lp-step:not([data-active]) { opacity: 0.65; }
+    .lp-step__screen { display: none; }
   }
-  .lp-step { min-block-size: 64svh; align-content: center; padding: 0; border: 0; transition: opacity 800ms var(--ease-lp); }
-  html.lp-ready .lp-step:not([data-active]) { opacity: 0.26; }
-  .lp-step__screen { display: none; }
 }
 
 /* телефон с перепиской — иллюстрация, не интерфейс Telegram один в один */
@@ -647,7 +657,9 @@ html.lp-anim .lp-note__arrow path { stroke-dashoffset: 1; }
 .lp-how__stage .lp-phone { --pw: inherit; }
 .lp-phone::before { content: ""; position: absolute; z-index: 3; inset-block-start: calc(var(--pw) * 0.065); inset-inline-start: 50%; translate: -50% 0; inline-size: 30%; block-size: calc(var(--pw) * 0.075); border-radius: var(--radius-pill); background: #04070d; }
 .lp-phone__screen { position: relative; block-size: 100%; overflow: clip; border-radius: calc(var(--pw) * 0.14); background: var(--chat-bg); color: var(--ink); font-size: calc(var(--pw) * 0.047); line-height: 1.35; }
-.lp-screen { position: absolute; inset: 0; display: grid; grid-template-rows: auto minmax(0, 1fr); opacity: 0; visibility: hidden; transition: opacity 700ms var(--ease-lp), visibility 0s linear 700ms; }
+.lp-screen { position: absolute; inset: 0; display: grid; grid-template-rows: auto minmax(0, 1fr); opacity: 0; visibility: hidden; }
+/* Ответ и прикреплённые кнопки появляются вместе при смене экрана. */
+html.lp-anim .lp-screen { transition: opacity 260ms ease-in-out, visibility 0s linear 260ms; }
 .lp-phone[data-screen="0"] .lp-screen:nth-child(1),
 .lp-phone[data-screen="1"] .lp-screen:nth-child(2),
 .lp-phone[data-screen="2"] .lp-screen:nth-child(3) { opacity: 1; visibility: visible; transition-delay: 0s; }
@@ -673,17 +685,7 @@ html.lp-anim .lp-typing i { animation: lp-dot 1.3s ease-in-out infinite; }
 html.lp-anim .lp-typing i:nth-child(2) { animation-delay: 0.15s; }
 html.lp-anim .lp-typing i:nth-child(3) { animation-delay: 0.3s; }
 @keyframes lp-dot { 0%, 60%, 100% { translate: 0 0; opacity: 0.45; } 30% { translate: 0 -0.3em; opacity: 1; } }
-/* сообщения появляются по очереди, когда экран становится активным */
-html.lp-anim .lp-phone[data-screen="0"] .lp-screen:nth-child(1) :is(.lp-msg, .lp-keys, .lp-typing),
-html.lp-anim .lp-phone[data-screen="1"] .lp-screen:nth-child(2) :is(.lp-msg, .lp-keys, .lp-typing),
-html.lp-anim .lp-phone[data-screen="2"] .lp-screen:nth-child(3) :is(.lp-msg, .lp-keys, .lp-typing) {
-  animation: lp-msg 800ms var(--ease-lp) both; animation-delay: calc(250ms + var(--mi, 0) * 650ms);
-}
-html.lp-anim .lp-phone[data-screen="0"] .lp-screen:nth-child(1) .is-tap,
-html.lp-anim .lp-phone[data-screen="1"] .lp-screen:nth-child(2) .is-tap,
-html.lp-anim .lp-phone[data-screen="2"] .lp-screen:nth-child(3) .is-tap { animation: lp-tap 900ms var(--ease-lp) both; animation-delay: calc(250ms + var(--mi, 0) * 650ms + 900ms); }
-@keyframes lp-msg { from { opacity: 0; translate: 0 0.9em; scale: 0.96; } }
-@keyframes lp-tap { from { background: color-mix(in oklch, var(--surface) 78%, transparent); color: var(--ink); } 40% { scale: 0.94; } }
+html:not(.lp-anim) .lp-step__num { transition: none; }
 
 /* ================================================================ 6. истории: колода */
 .lp-stories__pin { display: grid; gap: clamp(2rem, 4cqi, 3.5rem); max-inline-size: calc(var(--lp-max) + 2 * var(--lp-gutter)); margin-inline: auto; padding-inline: var(--lp-gutter); }
