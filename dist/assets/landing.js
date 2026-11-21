@@ -205,6 +205,32 @@
   });
   if (manScene) manScene.on = ANIM;
 
+  // При прокрутке вращается носитель жетонов, а подписи сохраняют свой наклон.
+  const orbit = $(".lp-antex__orbit");
+  if (ANIM && orbit) {
+    const visual = orbit.parentElement;
+    const orbitScene = scene({
+      target: (vh) => {
+        const r = visual.getBoundingClientRect();
+        return clamp((vh - r.top) / (vh + r.height));
+      },
+      render: (p) => orbit.style.setProperty("--orbit-angle", (190 * p).toFixed(2) + "deg"),
+    });
+    let visible = !IO;
+    const syncOrbit = () => {
+      orbitScene.on = visible && !document.hidden;
+      visual.classList.toggle("is-live", orbitScene.on);
+      if (orbitScene.on) kick();
+    };
+    if (IO) new IntersectionObserver(([entry]) => {
+      visible = entry.isIntersecting;
+      syncOrbit();
+    }).observe(visual);
+    document.addEventListener("visibilitychange", syncOrbit);
+    // Первичная синхронизация после инициализации общего цикла прокрутки.
+    requestAnimationFrame(syncOrbit);
+  }
+
   // направления (десктоп): раздел стоит, страны едут справа налево
   const dir = $(".lp-dir"), pin = $(".lp-dir__pin"), track = $(".lp-dir__track");
   let shift = 0;
@@ -267,11 +293,19 @@
 
   // шапка: тон — по разделу под ней, в меню — раздел у середины экрана
   const header = $(".lp-header");
+  const rates = $(".lp-rates");
+  const ratesSlot = rates?.parentElement;
+  const ratesWindow = rates && $(".lp-rates__window", rates);
   const toned = $$("main > section, .lp-footer");
   const navLinks = $$(".lp-nav a");
   let menuOpen = false;
   function readChrome(vh) {
-    const mid = header ? header.offsetHeight / 2 : 0;
+    const headerHeight = header?.getBoundingClientRect().height || 0;
+    const mid = headerHeight / 2;
+    const compact = scrollY > 32;
+    const docked = ratesSlot && ratesSlot.getBoundingClientRect().top <= headerHeight;
+    const dockChanged = ratesSlot && docked !== ratesSlot.classList.contains("is-docked");
+    const slotHeight = dockChanged && docked ? rates.getBoundingClientRect().height : 0;
     let tone = null, spy = null;
     for (const s of toned) {
       const r = s.getBoundingClientRect();
@@ -280,6 +314,21 @@
     }
     return () => {
       if (!header) return;
+      header.classList.toggle("is-compact", compact);
+      if (dockChanged) {
+        if (docked) ratesSlot.style.setProperty("--rates-slot", slotHeight + "px");
+        else ratesSlot.style.removeProperty("--rates-slot");
+        ratesSlot.classList.toggle("is-docked", docked);
+        if (docked && !ANIM) {
+          ratesWindow.tabIndex = 0;
+          ratesWindow.setAttribute("role", "region");
+          ratesWindow.setAttribute("aria-label", "Курсы валют, горизонтальная прокрутка");
+        } else {
+          ratesWindow.removeAttribute("tabindex");
+          ratesWindow.removeAttribute("role");
+          ratesWindow.removeAttribute("aria-label");
+        }
+      }
       const t = menuOpen ? "dark" : tone && tone.getAttribute("data-theme");
       const brand = !menuOpen && !!tone && tone.classList.contains("lp-tone-brand");
       if (brand !== (header.dataset.tone === "brand")) brand ? (header.dataset.tone = "brand") : delete header.dataset.tone;
@@ -315,7 +364,24 @@
   }
   const kick = () => { if (!raf) raf = requestAnimationFrame(frame); };
 
+  if (header && rates) {
+    const chromeSize = new ResizeObserver(() => {
+      root.style.setProperty("--lp-header-height", header.getBoundingClientRect().height + "px");
+      const dockHeight = ratesSlot.classList.contains("is-docked") ? rates.getBoundingClientRect().height : 0;
+      root.style.setProperty("--lp-docked-height", dockHeight + "px");
+      kick();
+    });
+    chromeSize.observe(header, { box: "border-box" });
+    chromeSize.observe(rates, { box: "border-box" });
+  }
+
   function measure() {
+    // После смены ширины резервируем новую естественную высоту даже вдали от секции.
+    if (ratesSlot?.classList.contains("is-docked")) {
+      ratesSlot.classList.remove("is-docked");
+      ratesSlot.style.setProperty("--rates-slot", rates.getBoundingClientRect().height + "px");
+      ratesSlot.classList.add("is-docked");
+    }
     fit();
     if (dirScene) {
       track.style.translate = "";
@@ -345,8 +411,8 @@
     { code: "TBS", city: "Тбилиси", country: "Грузия", flight: "ZP 101", seat: "городской чат" },
     { code: "BUS", city: "Батуми", country: "Грузия", flight: "ZP 102", seat: "женский чат" },
     { code: "DAD", city: "Дананг", country: "Вьетнам", flight: "ZP 201", seat: "аренда жилья" },
-    { code: "CXR", city: "Нячанг", country: "Вьетнам", flight: "ZP 202", seat: "отдых и транспорт" },
-    { code: "PQC", city: "Фукуок", country: "Вьетнам", flight: "ZP 203", seat: "отдых и транспорт" },
+    { code: "CXR", city: "Нячанг", country: "Вьетнам", flight: "ZP 202", seat: "городской чат" },
+    { code: "PQC", city: "Фукуок", country: "Вьетнам", flight: "ZP 203", seat: "городской чат" },
     { code: "UTP", city: "Паттайя", country: "Таиланд", flight: "ZP 301", seat: "барахолка" },
   ];
   const hero = $(".lp-hero");
@@ -579,6 +645,101 @@
     new ResizeObserver(fillMarquee).observe(cityTrack.parentElement);
     document.fonts.ready.then(fillMarquee);
   }
+  /* ---------------------------------------------------------------- курсы AntEx */
+  if (rates) {
+    const windowEl = $(".lp-rates__window", rates);
+    const track = $(".lp-rates__track", rates);
+    const list = $(".lp-rates__list", rates);
+    const pause = $(".lp-rates__pause", rates);
+    const date = $(".lp-rates__date", rates);
+    const priceFormat = new Intl.NumberFormat("ru-RU", { maximumFractionDigits: 8 });
+    const dateFormat = new Intl.DateTimeFormat("ru-RU", {
+      timeZone: "Europe/Moscow", dateStyle: "short", timeStyle: "short",
+    });
+
+    // Полный первый список остаётся доступен читалкам, копии заполняют остаток экрана и шов.
+    function fillRates() {
+      if (!ANIM) return;
+      rates.classList.add("is-moving");
+      const period = list.getBoundingClientRect().width;
+      if (!period) return;
+      const count = 1 + Math.ceil(windowEl.clientWidth / period);
+      while (track.children.length < count) {
+        const copy = list.cloneNode(true);
+        copy.setAttribute("aria-hidden", "true");
+        track.append(copy);
+      }
+      while (track.children.length > count) track.lastElementChild.remove();
+      track.style.setProperty("--marquee-end", -period + "px");
+      track.style.setProperty("--period-time", (period / 36) + "s");
+      pause.hidden = false;
+    }
+
+    function showRates(data) {
+      const currencies = ["USDT", "RUB", "THB", "GEL", "VND"];
+      if (!Array.isArray(data)) return false;
+      const rows = data.filter(row => row && currencies.includes(row.displayCurrencySell)
+        && currencies.includes(row.displayCurrencyBuy) && typeof row.priceDisplay === "string"
+        && /^\d+(\.\d+)?$/.test(row.priceDisplay) && Number.isFinite(Number(row.priceDisplay))
+        && Number(row.priceDisplay) > 0 && typeof row.updatedAt === "string" && Number.isFinite(Date.parse(row.updatedAt)));
+      if (!rows.length) return false;
+      const items = rows.map(row => {
+        const li = document.createElement("li");
+        const arrow = document.createElement("span");
+        const price = document.createElement("b");
+        arrow.textContent = "→ от";
+        price.textContent = priceFormat.format(Number(row.priceDisplay)) + " " + row.displayCurrencyBuy;
+        li.append("1 " + row.displayCurrencySell + " ", arrow, " ", price);
+        return li;
+      });
+      const times = rows.map(row => Date.parse(row.updatedAt));
+      const first = dateFormat.format(Math.min(...times));
+      const last = dateFormat.format(Math.max(...times));
+      date.title = "Обновлено " + (first === last ? last : first + " — " + last) + " МСК";
+      const parts = dateFormat.formatToParts(Math.max(...times));
+      const part = type => parts.find(item => item.type === type).value;
+      date.firstElementChild.textContent = [part("day"), part("month"), part("year")].join(".");
+      date.lastElementChild.textContent = part("hour") + ":" + part("minute") + " МСК";
+      list.replaceChildren(...items);
+      track.replaceChildren(list);
+      fillRates();
+      return true;
+    }
+
+    async function loadRates() {
+      for (const url of ["/api/antex-rates", "https://api.antex.pro/public/rates"]) {
+        try {
+          const response = await fetch(url, {
+            credentials: "omit", signal: AbortSignal.timeout(6500), headers: { Accept: "application/json" },
+          });
+          if (response.ok && showRates(await response.json())) return;
+        } catch { /* Датированный снимок остаётся доступным при сетевой ошибке. */ }
+      }
+    }
+
+    if (ANIM) {
+      fillRates();
+      new ResizeObserver(fillRates).observe(windowEl);
+      document.fonts.ready.then(fillRates);
+      pause.addEventListener("click", () => {
+        const stopped = rates.toggleAttribute("data-paused");
+        pause.textContent = stopped ? "▶" : "Ⅱ";
+        pause.setAttribute("aria-label", stopped ? "Запустить строку курсов" : "Остановить строку курсов");
+      });
+    }
+    if (IO) {
+      const nearRates = new IntersectionObserver(entries => {
+        if (entries.some(entry => entry.isIntersecting)) {
+          nearRates.disconnect();
+          loadRates();
+        }
+      }, { rootMargin: "100% 0px" });
+      nearRates.observe(rates);
+    } else {
+      loadRates();
+    }
+  }
+
   const passBox = $(".lp-hero__pass");
   const passCode = $('[data-pass="code"]');
   const field = (k) => $(`[data-pass="${k}"]`);
@@ -898,20 +1059,6 @@
     });
     orbZone.addEventListener("pointerleave", reset);
   }
-
-  /* ---------------------------------------------------------------- подсказка вместо перехода в Telegram */
-  const toast = $(".lp-toast");
-  const toastText = toast && $(".lp-toast__text", toast);
-  let toastTimer = 0;
-  document.addEventListener("click", (e) => {
-    const link = e.target.closest("[data-tg]");
-    if (!link || !toast) return;
-    e.preventDefault();
-    clearTimeout(toastTimer);
-    toastText.textContent = `Прототип: здесь откроется ${link.dataset.tg} в Telegram.`;
-    toast.setAttribute("data-open", "");
-    toastTimer = setTimeout(() => toast.removeAttribute("data-open"), 3800);
-  });
 
   /* ---------------------------------------------------------------- старт */
   measure();
