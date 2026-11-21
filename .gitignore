@@ -1,0 +1,17 @@
+# В Git допускаются только правила игнорирования и файлы статического сайта.
+/*
+!/.gitignore
+!/prototype/
+/prototype/*
+!/prototype/index.html
+!/prototype/prototype.css
+!/prototype/prototype.js
+!/prototype/assets/
+/prototype/assets/*
+!/prototype/assets/bundle.css
+!/prototype/assets/bundle.js
+!/prototype/assets/fonts.css
+!/prototype/assets/tokens.css
+!/prototype/assets/licenses/
+/prototype/assets/licenses/*
+!/prototype/assets/licenses/OFL-*.txt
