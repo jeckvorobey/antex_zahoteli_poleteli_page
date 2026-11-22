@@ -885,7 +885,7 @@
     const a = n % 10, b = n % 100;
     return a === 1 && b !== 11 ? one : a >= 2 && a <= 4 && (b < 10 || b >= 20) ? few : many;
   };
-  const communities = (n) => `${n} ${plural(n, "сообщество", "сообщества", "сообществ")}`;
+  const chatCount = (n) => `${n} ${plural(n, "чат", "чата", "чатов")}`;
   const COUNTRIES = {
     ge: { name: "Грузия", gen: "Грузии", loc: "в Грузии", cities: ["Тбилиси", "Батуми"] },
     vn: { name: "Вьетнам", gen: "Вьетнама", loc: "во Вьетнаме", cities: ["Дананг", "Нячанг", "Фукуок"] },
@@ -900,10 +900,10 @@
     "Паттайя": { gen: "Паттайи", loc: "в Паттайе" },
   };
   const TASKS = {
-    advice: { name: "совет", about: "с советами" },
+    advice: { name: "вопросы", about: "для вопросов о городе" },
     talk: { name: "общение", about: "для общения" },
-    home: { name: "жильё", about: "про жильё" },
-    stuff: { name: "вещи", about: "про вещи" },
+    home: { name: "аренда", about: "по аренде жилья" },
+    stuff: { name: "барахолка", about: "для объявлений о вещах" },
   };
 
   const board = $("#communities");
@@ -958,11 +958,11 @@
     }
 
     const place = st.city !== "all" ? st.city : country ? country.name : "Все страны";
-    const what = st.task !== "any" ? ", " + TASKS[st.task].name : "";
+    const what = st.task !== "any" ? " · " + TASKS[st.task].name : "";
     if (countLine) {
       countLine.innerHTML = short
-        ? `Показано <b>${shown.length}</b> из ${communities(found.length)}`
-        : `${place}${what}: <b>${communities(shown.length)}</b>`;
+        ? `Показано <b>${shown.length}</b> из ${chatCount(found.length)}`
+        : `${place}${what}: <b>${chatCount(shown.length)}</b>`;
     }
     if (resetBtn) resetBtn.hidden = !filtered();
     if (moreBox) moreBox.hidden = !short;
@@ -970,10 +970,13 @@
     if (empty) {
       empty.hidden = shown.length > 0;
       if (!shown.length) {
-        const where = st.city !== "all" ? CITIES[st.city] : country || { gen: "", loc: "" };
-        $(".lp-empty__text", empty).textContent =
-          `Отдельного чата ${(TASKS[st.task] || { about: "" }).about} ${where.loc} пока нет. Спросите в общем чате — там подскажут, где искать.`;
-        $(".lp-empty__btn", empty).textContent = `Показать все чаты ${where.gen}`;
+        const where = st.city !== "all" ? CITIES[st.city] : country;
+        const topic = TASKS[st.task]?.about;
+        const location = where?.loc ?? "в каталоге";
+        $(".lp-empty__text", empty).textContent = topic
+          ? `В нашей подборке пока нет чата ${topic} ${location}.`
+          : `В нашей подборке пока нет чатов ${location}.`;
+        $(".lp-empty__btn", empty).textContent = where ? `Показать все чаты ${where.gen}` : "Показать все чаты";
       }
     }
     if (note) note.hidden = !shown.includes(noteRow);

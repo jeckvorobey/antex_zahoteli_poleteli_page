@@ -104,9 +104,7 @@ body::before {
   rotate: -3deg; transform-origin: 0 50%;
 }
 .lp-head { display: grid; gap: clamp(0.5rem, 1cqi, 1rem); margin-block-end: var(--lp-gap); }
-.lp-head .lp-kicker { margin-block-end: clamp(0.5rem, 1.4cqi, 1.5rem); }
 .lp-head--center { justify-items: center; text-align: center; }
-.lp-head--center .lp-kicker { justify-content: center; }
 .lp-head--center .lp-script { justify-self: center; padding: 0; transform-origin: 50% 50%; }
 .lp-head__aside { margin: 0; max-inline-size: 28ch; color: var(--ink-muted); font: 500 var(--text-l) / 1.45 var(--font-text); }
 @container page (width >= 64rem) {
@@ -528,7 +526,6 @@ html.lp-anim .lp-note__arrow path { stroke-dashoffset: 1; }
 /* ================================================================ 3. направления */
 .lp-dir__track { list-style: none; display: grid; gap: clamp(4.5rem, 9cqi, 9rem); margin: 0 auto; padding-block: 0; max-inline-size: calc(var(--lp-max) + 2 * var(--lp-gutter)); padding-inline: var(--lp-gutter); }
 .lp-dir__intro { display: grid; align-content: center; gap: clamp(0.5rem, 1cqi, 1rem); }
-.lp-dir__intro .lp-kicker { margin-block-end: clamp(0.5rem, 1.4cqi, 1.5rem); }
 .lp-dir__intro .lp-script { font-size: clamp(1.5rem, 0.9rem + 1.9cqi, 2.9rem); white-space: nowrap; }
 .lp-dir__hint { display: inline-flex; align-items: center; gap: 0.6rem; margin: clamp(1rem, 2cqi, 2rem) 0 0; color: var(--ink-muted); font: 600 var(--text-m) / 1.3 var(--font-text); }
 .lp-dir__hint-pin { display: none; }
@@ -632,7 +629,6 @@ html.lp-anim .lp-note__arrow path { stroke-dashoffset: 1; }
 .lp-flight__tags { display: flex; flex-wrap: wrap; gap: 0.4rem 1rem; margin: 0.2rem 0 0; color: var(--ink-muted); font: 600 var(--text-xs) / 1.3 var(--font-text); }
 .lp-flight__tags > span { display: inline-flex; align-items: center; gap: 0.35rem; }
 .lp-flight__ok { color: var(--success); }
-.lp-flight__new { padding: 0.2rem 0.55rem; border-radius: var(--radius-pill); background: var(--sun); color: var(--on-sun); }
 .lp-flight__go {
   grid-area: go; justify-self: start; display: inline-flex; align-items: center; gap: 0.75rem;
   min-block-size: 3.25rem; padding: 0.3rem 0.35rem 0.3rem 1.35rem; border: 1px solid var(--line-strong); border-radius: var(--radius-pill);
@@ -677,8 +673,15 @@ html.lp-anim .lp-note__arrow path { stroke-dashoffset: 1; }
 }
 
 /* ================================================================ 5. как это работает: телефон и шаги */
+.lp-how, .lp-stories {
+  --lp-scene-title-gap: clamp(0px, max(min(1.125rem, 36svh - 19.125rem), 38svh - 24.25rem), 10rem);
+}
 .lp-how__grid { display: grid; gap: clamp(2rem, 4cqi, 4rem); }
 .lp-how .lp-head { margin: 0; }
+.lp-how__pin { --how-title-leading: 0.98; }
+#how-title { container-type: inline-size; line-height: var(--how-title-leading); }
+.lp-how__title-line { display: block; font-size: min(1em, 15cqi); white-space: nowrap; }
+html.lp-anim #how-title .lp-w { padding-inline: 0.08em; margin-inline: -0.08em; }
 .lp-how__stage { display: none; }
 .lp-how__guide > .lp-head__aside { margin-block-end: var(--lp-gap); }
 .lp-steps { list-style: none; margin: 0; padding: 0; display: grid; gap: clamp(3rem, 7cqi, 4.5rem); }
@@ -693,10 +696,23 @@ html.lp-anim .lp-note__arrow path { stroke-dashoffset: 1; }
   @container page (width >= 64rem) {
     .lp-how__grid { grid-template-columns: minmax(0, 1fr) minmax(0, 1.1fr); gap: 6cqi; align-items: start; }
     .lp-how__pin {
-      position: sticky; inset-block-start: calc(var(--lp-header-height, var(--header-h)) + var(--lp-docked-height, 0px) + 1rem);
+      --how-sticky-gap: clamp(1.25rem, 3svh, 3rem);
+      --how-chrome: calc(var(--lp-header-height, var(--header-h)) + var(--lp-docked-height, 0px));
+      --how-column-room: calc(100svh - var(--how-chrome) - 1rem - 5.04svh - 2.05 * min(20rem, 29svh) - clamp(1rem, 3svh, 3rem));
+      --how-title-font: min(var(--fs-title), 8.5cqi, 9svh);
+      /* В колонке 1 : 1.1 строки не крупнее 15% её ширины. Резерв оставляет место и для второй строки подписи. */
+      --how-title-max: min(var(--how-title-font), calc(var(--lp-max) * 0.15 / 2.1));
+      --how-inset-limit: calc(var(--how-column-room) - 2 * var(--how-title-leading) * var(--how-title-max) - 5.04svh);
+      position: sticky;
+      inset-block-start: calc(var(--how-chrome) + clamp(var(--how-sticky-gap), var(--how-inset-limit), var(--lp-scene-title-gap) + 0.375rem));
       display: grid; gap: clamp(1rem, 3svh, 3rem);
     }
-    .lp-how .lp-title { font-size: min(var(--fs-title), 8.5cqi, 9svh); }
+    .lp-how .lp-title { font-size: var(--how-title-font); }
+    .lp-how__title-line {
+      /* Две строки делят высоту, которая остаётся после шапки, ленты, подписи, телефона и отступов. */
+      --how-title-room: calc(var(--how-column-room) - var(--how-sticky-gap));
+      font-size: min(1em, 15cqi, calc(var(--how-title-room) / (2 * var(--how-title-leading))));
+    }
     .lp-how .lp-script { font-size: min(var(--fs-script), 4.2svh); }
     .lp-how__stage { display: grid; justify-items: center; --pw: min(20rem, 29svh); }
     .lp-how__guide { padding-block-end: 12svh; }
@@ -791,9 +807,12 @@ html.lp-scrub .lp-stories {
   scroll-margin-block-start: calc(0px - var(--lp-header-height, 0px) - var(--lp-docked-height, 0px));
 }
 html.lp-scrub .lp-stories__pin {
+  --stories-min-inset: clamp(1rem, 3svh, 2rem);
+  --stories-head-inset: max(var(--stories-min-inset), var(--lp-scene-title-gap) + 0.5rem);
   position: sticky; inset-block-start: 0; block-size: var(--lp-screen); overflow: clip;
   grid-template-rows: auto minmax(0, 1fr) auto; gap: clamp(1rem, 2.6svh, 2rem);
-  padding-block: calc(var(--lp-header-height, var(--header-h)) + var(--lp-docked-height, 0px) + clamp(1rem, 3svh, 2rem)) clamp(1.25rem, 3svh, 2rem);
+  padding-block: calc(var(--lp-header-height, var(--header-h)) + var(--lp-docked-height, 0px)
+    + var(--stories-head-inset)) clamp(1.25rem, 3svh, 2rem);
 }
 html.lp-scrub .lp-stories .lp-title { font-size: clamp(2.4rem, 1rem + 4.4cqi, 5.5rem); }
 html.lp-scrub .lp-deck { display: grid; grid-template: minmax(0, 1fr) / minmax(0, 1fr); place-items: center; }
@@ -805,7 +824,8 @@ html.lp-scrub .lp-postcard__video { block-size: 100%; }
 /* На невысоком экране задним карточкам нужно место перед счётчиком. */
 @media (height <= 50rem), (orientation: landscape) and (height <= 60rem) {
   html.lp-scrub .lp-stories__pin {
-    padding-block: calc(var(--lp-header-height, var(--header-h)) + var(--lp-docked-height, 0px) + 1rem) 0.75rem;
+    --stories-min-inset: 1rem;
+    padding-block-end: 0.75rem;
     gap: 0.75rem;
   }
   html.lp-scrub .lp-deck { padding-block-end: 2.75rem; }
@@ -825,7 +845,7 @@ html.lp-scrub .lp-postcard__video { block-size: 100%; }
       grid-template-columns: minmax(0, 0.8fr) minmax(0, 1.65fr); grid-template-rows: minmax(0, 1fr) auto;
       column-gap: var(--space-m);
     }
-    html.lp-scrub .lp-stories .lp-head { align-self: center; }
+    html.lp-scrub .lp-stories .lp-head { align-self: start; margin-block-start: max(0px, 3svh - var(--stories-head-inset)); }
     html.lp-scrub .lp-stories .lp-title { font-size: clamp(1.75rem, 7svh, 3.25rem); }
     html.lp-scrub .lp-stories .lp-script { font-size: clamp(1.25rem, 4.5svh, 2.25rem); }
     html.lp-scrub .lp-deck { grid-area: 1 / 2 / 3 / 3; }
