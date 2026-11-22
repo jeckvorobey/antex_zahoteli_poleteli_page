@@ -926,7 +926,7 @@
     const what = st.task !== "any" ? ", " + TASKS[st.task].name : "";
     if (countLine) {
       countLine.innerHTML = short
-        ? `Популярные: <b>${shown.length}</b> из ${communities(found.length)}`
+        ? `Показано <b>${shown.length}</b> из ${communities(found.length)}`
         : `${place}${what}: <b>${communities(shown.length)}</b>`;
     }
     if (resetBtn) resetBtn.hidden = !filtered();
