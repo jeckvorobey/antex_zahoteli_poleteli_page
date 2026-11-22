@@ -1,6 +1,6 @@
 /* GSAP применяет эти эффекты после проверки настройки движения. */
 html.lp-anim.lp-gsap :is(.lp-hero__kicker, .lp-hero__big > span,
-  .lp-hero__lead, .lp-hero__actions, .lp-hero__pass, .lp-hero .lp-marquee,
+  .lp-hero__lead, .lp-hero__pass, .lp-hero .lp-marquee,
   [data-reveal][data-in]:not(:where(.lp-script, .lp-cta__script, .lp-note)), [data-split][data-in] .lp-w__i) { animation: none; }
 
 html.lp-gsap .lp-hero__pass {

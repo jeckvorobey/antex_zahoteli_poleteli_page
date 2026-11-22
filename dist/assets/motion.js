@@ -19,7 +19,6 @@
     { opacity: 1, y: 0, filter: "blur(0em)", duration: 1.3, delay: 0.3,
       stagger: 0.07, ease, clearProps: "transform,opacity,filter" });
   rise(".lp-hero__lead", 1.2, 1.35);
-  rise(".lp-hero__actions", 1.2, 1.5);
   gsap.fromTo(".lp-hero__pass",
     { opacity: 0, "--flight-x": "3rem", "--flight-y": "2.5rem", "--flight-angle": "6deg" },
     { opacity: 1, "--flight-x": "0rem", "--flight-y": "0rem", "--flight-angle": "-4deg",

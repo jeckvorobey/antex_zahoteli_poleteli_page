@@ -233,14 +233,33 @@
 
   // направления (десктоп): раздел стоит, страны едут справа налево
   const dir = $(".lp-dir"), pin = $(".lp-dir__pin"), track = $(".lp-dir__track");
+  const dirHold = 0.06, dirTravel = 1 - 2 * dirHold;
   let shift = 0;
   const dirScene = dir && pin && track && scene({
     target: (vh) => { const r = dir.getBoundingClientRect(), total = r.height - vh; return total > 0 ? clamp(-r.top / total) : 0; },
     render: (p) => {
-      const q = clamp((p - 0.06) / 0.88); // в начале и в конце раздел чуть стоит на месте
+      const q = clamp((p - dirHold) / dirTravel); // в начале и в конце раздел чуть стоит на месте
       track.style.translate = `${(-shift * q).toFixed(1)}px 0`;
       dir.style.setProperty("--dir-p", q.toFixed(4));
     },
+  });
+
+  // При переходе клавиатурой переводим положение страны на горизонтальной ленте
+  // в соответствующую точку вертикальной прокрутки.
+  dir?.addEventListener("focusin", (event) => {
+    const country = event.target.closest(".lp-country");
+    if (!dirScene?.on || !country || !event.target.matches(":focus-visible")) return;
+    const box = country.getBoundingClientRect();
+    const viewport = pin.getBoundingClientRect();
+    if (Math.abs(viewport.top) < 1 && box.left >= viewport.left && box.right <= viewport.right) return;
+
+    const gutter = parseFloat(getComputedStyle(track).paddingInlineStart);
+    const distance = box.left - track.getBoundingClientRect().left - gutter;
+    const progress = dirHold + dirTravel * clamp(distance / shift);
+    const section = dir.getBoundingClientRect();
+    scrollTo({ top: scrollY + section.top + progress * (section.height - innerHeight), behavior: "instant" });
+    dirScene.cur = dirScene.drawn = progress;
+    dirScene.render(progress);
   });
 
   // истории: колода, верхняя карточка улетает в сторону
@@ -296,27 +315,39 @@
   const rates = $(".lp-rates");
   const ratesSlot = rates?.parentElement;
   const ratesWindow = rates && $(".lp-rates__window", rates);
-  const toned = $$("main > section, .lp-footer");
-  const navLinks = $$(".lp-nav a");
-  let menuOpen = false;
+  const tones = ["antex", "sky", "deep", "brand"];
+  const toned = $$("main > section, .lp-footer").map(section => ({
+    section,
+    tone: tones.find(name => section.classList.contains("lp-tone-" + name))
+      || (section.classList.contains("lp-footer") ? "deep" : "paper"),
+  }));
+  const navLinks = $$(".lp-nav a, .lp-sheet__nav a");
+  let menuOpen = false, activeSection = null, ratesFlowHeight = 0;
   function readChrome(vh) {
     const headerHeight = header?.getBoundingClientRect().height || 0;
-    const mid = headerHeight / 2;
     const compact = scrollY > 32;
-    const docked = ratesSlot && ratesSlot.getBoundingClientRect().top <= headerHeight;
-    const dockChanged = ratesSlot && docked !== ratesSlot.classList.contains("is-docked");
-    const slotHeight = dockChanged && docked ? rates.getBoundingClientRect().height : 0;
-    let tone = null, spy = null;
-    for (const s of toned) {
-      const r = s.getBoundingClientRect();
-      if (r.top <= mid && r.bottom > mid) tone = s; // листы перекрываются — побеждает верхний, то есть последний
-      if (s.id && r.top <= vh * 0.4 && r.bottom > vh * 0.4) spy = s.id;
+    const wasDocked = ratesSlot?.classList.contains("is-docked");
+    const slot = ratesSlot?.getBoundingClientRect();
+    const rateHeight = rates?.getBoundingClientRect().height || 0;
+    const flowHeight = wasDocked ? ratesFlowHeight : rateHeight;
+    // Точка верхнего закрепления относится к реальной ленте, включая запас её слота.
+    const docked = slot && slot.bottom - flowHeight <= headerHeight;
+    const dockChanged = slot && docked !== wasDocked;
+    // Берём открытый ряд страницы под шапкой и, если она закреплена, лентой.
+    const edge = headerHeight + (docked && wasDocked ? rateHeight : 0) + 1;
+    let current = null, spy = null;
+    for (const scene of toned) {
+      const { section } = scene;
+      const r = section.getBoundingClientRect();
+      if (r.top <= edge && r.bottom > edge) current = scene;
+      if (section.id && r.top <= vh * 0.4 && r.bottom > vh * 0.4) spy = section.id;
     }
     return () => {
       if (!header) return;
       header.classList.toggle("is-compact", compact);
+      if (!wasDocked && rates) ratesFlowHeight = flowHeight;
       if (dockChanged) {
-        if (docked) ratesSlot.style.setProperty("--rates-slot", slotHeight + "px");
+        if (docked) ratesSlot.style.setProperty("--rates-slot", slot.height + "px");
         else ratesSlot.style.removeProperty("--rates-slot");
         ratesSlot.classList.toggle("is-docked", docked);
         if (docked && !ANIM) {
@@ -329,14 +360,17 @@
           ratesWindow.removeAttribute("aria-label");
         }
       }
-      const t = menuOpen ? "dark" : tone && tone.getAttribute("data-theme");
-      const brand = !menuOpen && !!tone && tone.classList.contains("lp-tone-brand");
-      if (brand !== (header.dataset.tone === "brand")) brand ? (header.dataset.tone = "brand") : delete header.dataset.tone;
+      const t = menuOpen ? "dark" : current?.section.dataset.theme;
+      const tone = menuOpen ? "deep" : current?.tone || "paper";
+      if (header.dataset.tone !== tone) header.dataset.tone = tone;
       if (t) { if (header.getAttribute("data-theme") !== t) header.setAttribute("data-theme", t); }
       else header.removeAttribute("data-theme");
-      for (const a of navLinks) {
-        const on = a.getAttribute("href") === "#" + spy;
-        if (on !== a.hasAttribute("aria-current")) on ? a.setAttribute("aria-current", "true") : a.removeAttribute("aria-current");
+      if (spy !== activeSection) {
+        activeSection = spy;
+        for (const a of navLinks) {
+          const on = a.getAttribute("href") === "#" + spy;
+          if (on !== a.hasAttribute("aria-current")) on ? a.setAttribute("aria-current", "true") : a.removeAttribute("aria-current");
+        }
       }
     };
   }
@@ -379,7 +413,8 @@
     // После смены ширины резервируем новую естественную высоту даже вдали от секции.
     if (ratesSlot?.classList.contains("is-docked")) {
       ratesSlot.classList.remove("is-docked");
-      ratesSlot.style.setProperty("--rates-slot", rates.getBoundingClientRect().height + "px");
+      ratesFlowHeight = rates.getBoundingClientRect().height;
+      ratesSlot.style.setProperty("--rates-slot", ratesSlot.getBoundingClientRect().height + "px");
       ratesSlot.classList.add("is-docked");
     }
     fit();
@@ -387,7 +422,7 @@
       track.style.translate = "";
       const pinned = ANIM && getComputedStyle(pin).position === "sticky";
       shift = pinned ? Math.max(0, track.scrollWidth - pin.clientWidth) : 0;
-      if (shift > 0) dir.style.setProperty("--dir-len", Math.round(shift / 0.88) + "px");
+      if (shift > 0) dir.style.setProperty("--dir-len", Math.round(shift / dirTravel) + "px");
       else dir.style.removeProperty("--dir-len");
       dirScene.on = shift > 0;
       dirScene.cur = dirScene.drawn = null;
@@ -997,7 +1032,8 @@
   render();
 
   /* ---------------------------------------------------------------- меню на телефоне */
-  const burger = $(".lp-burger"), sheet = $("#lp-sheet"), page = $(".lp-page");
+  const burger = $(".lp-burger"), sheet = $("#lp-sheet");
+  const menuBackground = $$(".lp-skip, .lp-logo, .lp-nav, .lp-header__actions, .lp-theme, .lp-page");
   let sheetTimer = 0;
   function setMenu(open) {
     if (!burger || !sheet || open === menuOpen) return;
@@ -1006,12 +1042,13 @@
     burger.setAttribute("aria-expanded", String(open));
     burger.setAttribute("aria-label", open ? "Закрыть меню" : "Открыть меню");
     root.classList.toggle("lp-lock", open);
-    if (page) page.inert = open;
+    menuBackground.forEach((element) => { element.inert = open; });
+    sheet.inert = !open;
     if (open) {
       sheet.hidden = false;
       sheet.getBoundingClientRect(); // сначала закрытое состояние, потом — раскрытие
       sheet.setAttribute("data-open", "");
-      requestAnimationFrame(() => { const a = $("a", sheet); if (a) a.focus({ preventScroll: true }); });
+      requestAnimationFrame(() => { if (menuOpen) $("a[href]", sheet)?.focus({ preventScroll: true }); });
     } else {
       sheet.removeAttribute("data-open");
       sheetTimer = setTimeout(() => { sheet.hidden = true; }, ANIM ? 1000 : 300);
@@ -1022,7 +1059,17 @@
     burger.addEventListener("click", () => setMenu(!menuOpen));
     sheet.addEventListener("click", (e) => { if (e.target.closest("a")) setMenu(false); });
     document.addEventListener("keydown", (e) => {
-      if (e.key === "Escape" && menuOpen) { setMenu(false); burger.focus(); }
+      if (!menuOpen) return;
+      if (e.key === "Escape") { setMenu(false); burger.focus(); }
+      if (e.key !== "Tab") return;
+      const last = $$("a[href]", sheet).at(-1);
+      if (e.shiftKey && document.activeElement === burger && last) {
+        e.preventDefault();
+        last.focus();
+      } else if (!e.shiftKey && document.activeElement === last) {
+        e.preventDefault();
+        burger.focus();
+      }
     });
     matchMedia("(width >= 75rem)").addEventListener("change", (e) => { if (e.matches) setMenu(false); });
   }
@@ -1065,4 +1112,30 @@
   root.classList.add("lp-ready");
   if (document.fonts && document.fonts.ready) document.fonts.ready.then(measure);
   addEventListener("load", measure);
+
+  // Прямой вход может прокрутить к AntEx до пересчёта первого экрана и шрифтов.
+  if (location.hash === "#antex") {
+    const initialAnchor = new AbortController();
+    const { signal } = initialAnchor;
+    const cancel = () => initialAnchor.abort();
+    const align = () => {
+      if (!signal.aborted && location.hash === "#antex") {
+        $("#antex")?.scrollIntoView({ block: "start", behavior: "instant" });
+      }
+    };
+    for (const type of ["pointerdown", "touchstart", "wheel", "keydown"]) {
+      addEventListener(type, cancel, { passive: true, signal });
+    }
+    addEventListener("load", async () => {
+      await document.fonts?.ready;
+      requestAnimationFrame(() => {
+        align();
+        // После прокрутки наблюдатель измеряет компактную шапку, и первый экран меняет высоту.
+        requestAnimationFrame(() => requestAnimationFrame(() => {
+          align();
+          cancel();
+        }));
+      });
+    }, { once: true, signal });
+  }
 })();
