@@ -533,7 +533,6 @@ html.lp-anim .lp-note__arrow path { stroke-dashoffset: 1; }
 .lp-dir__hint { display: inline-flex; align-items: center; gap: 0.6rem; margin: clamp(1rem, 2cqi, 2rem) 0 0; color: var(--ink-muted); font: 600 var(--text-m) / 1.3 var(--font-text); }
 .lp-dir__hint-pin { display: none; }
 .lp-country { display: grid; gap: clamp(1rem, 2.4cqi, 2rem) clamp(2rem, 5cqi, 5rem); align-content: center; }
-.lp-country__num { font: 700 var(--text-s) / 1 var(--font-text); letter-spacing: 0.14em; color: var(--brand-text); }
 .lp-country__name { margin: 0; font: 800 clamp(3.25rem, 0.8rem + 8.6cqi, 9rem) / 0.86 var(--font-display); letter-spacing: -0.055em; text-transform: uppercase; }
 .lp-country__text { display: grid; gap: clamp(0.75rem, 1.4cqi, 1.25rem); align-content: start; justify-items: start; }
 .lp-country__note { margin: 0; max-inline-size: 30ch; font: 500 var(--text-l) / 1.45 var(--font-text); color: var(--ink-muted); }
@@ -556,17 +555,18 @@ html.lp-anim .lp-note__arrow path { stroke-dashoffset: 1; }
 .lp-ticket__meta b { margin-inline-end: 0.45em; color: var(--ink); }
 @container page (width >= 45rem) {
   .lp-country { grid-template-columns: minmax(0, 1fr) minmax(0, 1.15fr); }
-  .lp-country__num, .lp-country__name { grid-column: 1 / -1; }
+  .lp-country__name { grid-column: 1 / -1; }
 }
-.lp-dir__bar { display: none; margin-inline: var(--lp-gutter); block-size: 2px; border-radius: 2px; background: var(--line); overflow: clip; }
+.lp-dir__bar { display: none; position: absolute; inset-block-start: var(--dir-top); inset-inline: 0; block-size: 2px; background: var(--line); overflow: clip; pointer-events: none; }
 .lp-dir__bar span { display: block; block-size: 100%; background: var(--brand-text); transform-origin: 0 50%; scale: var(--dir-p, 0) 1; }
 /* десктоп: раздел замирает на экране, страны едут справа налево */
 @container page (width >= 64rem) {
   html.lp-scrub .lp-dir { block-size: calc(var(--lp-screen) + var(--dir-len, 200svh)); padding-block: 0; }
   html.lp-scrub .lp-dir__pin {
+    --dir-top: calc(var(--lp-header-height, var(--header-h)) + var(--lp-docked-height, 0px));
     position: sticky; inset-block-start: 0; block-size: var(--lp-screen); overflow: clip;
-    display: grid; grid-template-rows: minmax(0, 1fr) auto; gap: 1.5rem;
-    padding-block: calc(var(--lp-header-height, var(--header-h)) + var(--lp-docked-height, 0px) + 2rem) 2.25rem;
+    display: grid; grid-template-rows: minmax(0, 1fr);
+    padding-block: calc(var(--dir-top) + 2rem) 2.25rem;
   }
   html.lp-scrub .lp-dir__track {
     display: flex; align-items: center; gap: clamp(6rem, 10cqi, 11rem);
