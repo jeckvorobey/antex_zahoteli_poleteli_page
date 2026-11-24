@@ -31,6 +31,10 @@
     }
     d.setAttribute("data-vt", kind || "change");
     var t = (vtNow = document.startViewTransition(flush));
+    // Быстрый повторный клик отменяет подготовку прежнего эффекта, а не обновление данных.
+    t.ready.catch(function (error) {
+      if (!error || error.name !== "AbortError") throw error;
+    });
     // прерванный переход (быстрый второй клик) не снимает data-vt со следующего
     t.finished.finally(function () { if (vtNow === t) { vtNow = null; d.removeAttribute("data-vt"); } });
     return t;

@@ -312,6 +312,7 @@
 
   // шапка: тон — по разделу под ней, в меню — раздел у середины экрана
   const header = $(".lp-header");
+  const footer = $(".lp-footer");
   const rates = $(".lp-rates");
   const ratesSlot = rates?.parentElement;
   const ratesWindow = rates && $(".lp-rates__window", rates);
@@ -400,13 +401,17 @@
 
   if (header && rates) {
     const chromeSize = new ResizeObserver(() => {
-      root.style.setProperty("--lp-header-height", header.getBoundingClientRect().height + "px");
+      const headerHeight = header.getBoundingClientRect().height;
       const dockHeight = ratesSlot.classList.contains("is-docked") ? rates.getBoundingClientRect().height : 0;
+      const footerHeight = footer?.getBoundingClientRect().height || 0;
+      root.style.setProperty("--lp-header-height", headerHeight + "px");
       root.style.setProperty("--lp-docked-height", dockHeight + "px");
+      root.style.setProperty("--lp-footer-height", footerHeight + "px");
       kick();
     });
     chromeSize.observe(header, { box: "border-box" });
     chromeSize.observe(rates, { box: "border-box" });
+    if (footer) chromeSize.observe(footer, { box: "border-box" });
   }
 
   function measure() {
