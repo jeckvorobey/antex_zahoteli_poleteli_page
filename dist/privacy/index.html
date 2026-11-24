@@ -1,0 +1,82 @@
+<!DOCTYPE html>
+<!-- Made with Frappe Builder -->
+<html lang="ru">
+<head>
+
+	<meta charset="UTF-8">
+	<meta name="viewport" content="width=device-width, initial-scale=1.0">
+	<meta name="color-scheme" content="light dark">
+
+
+
+	<script>
+	window.process=window.process||{env:{NODE_ENV:"production"}};
+	window.events={dispatch(name,data,target=document){target.dispatchEvent(new CustomEvent(name,{detail:data}))},listen(name,callback,target=document){const handler=event=>callback(event.detail,event);target.addEventListener(name,handler);return()=>target.removeEventListener(name,handler)}}
+	</script>
+
+
+
+	<title>Политика обработки данных и cookie — AntEx</title>
+	<link rel="icon" href="../assets/favicon-useful-chats.ico"  media="(prefers-color-scheme: light)"/>
+	<link rel="icon" href="../assets/favicon-useful-chats.ico"  media="(prefers-color-scheme: dark)"/>
+	<meta name="title" content="Политика обработки данных и cookie — AntEx"><meta name="description" content="Как сайт AntEx использует аналитические сервисы и локальное хранилище и как изменить выбор cookie."><meta name="language" content="ru"><meta property="og:type"  content="article"><meta property="og:title"  content="Политика обработки данных и cookie — AntEx"><meta property="og:description"  content="Как сайт AntEx использует аналитические сервисы и локальное хранилище и как изменить выбор cookie."><meta name="twitter:title" content="Политика обработки данных и cookie — AntEx"><meta name="twitter:description" content="Как сайт AntEx использует аналитические сервисы и локальное хранилище и как изменить выбор cookie."><meta name="twitter:card" content="summary_large_image">
+
+	<style>
+	:root { color-scheme: light dark }
+	:root { background: white; color: black }
+	:root[data-prefers-color-scheme="light"], :root[data-theme="light"] { color-scheme: light }
+	:root[data-prefers-color-scheme="dark"], :root[data-theme="dark"] { color-scheme: dark }
+	::selection { background: Highlight; color: HighlightText }
+	img { filter: var(--builder-image-dim, none) }
+	picture img { filter: none }
+	/* a link is hovered (or tapped) or keyboard-focused as it's activated, so its #id jump scrolls the page and nested blocks smoothly unless set to instant */
+	:root:has(a[href^="#"]:is(:hover, :focus-visible)), :root:has(a[href^="#"]:is(:hover, :focus-visible)) * { scroll-behavior: smooth }
+	:root:has(a[data-scroll-behavior="instant"]:is(:hover, :focus-visible)), :root:has(a[data-scroll-behavior="instant"]:is(:hover, :focus-visible)) * { scroll-behavior: auto }
+	@media (prefers-color-scheme: dark) { :root:not([data-prefers-color-scheme="light"]):not([data-theme="light"]) { --builder-image-dim: brightness(0.85) contrast(1.05) } }
+	:root[data-prefers-color-scheme="dark"], :root[data-theme="dark"] { --builder-image-dim: brightness(0.85) contrast(1.05) }
+	</style>
+
+
+
+	<style></style><link rel="stylesheet" href="../assets/builder-tokens.css" media="screen">
+	<link href="https://www.antex.pro/privacy/" rel="canonical"/>
+<script>
+  const builderReset = document.querySelector('link[href^="/assets/builder/reset.css"]');
+  if (builderReset) builderReset.disabled = true;
+  try {
+    const theme = localStorage.getItem("zp-theme");
+    if (theme === "light" || theme === "dark") document.documentElement.dataset.theme = theme;
+  } catch {}
+</script>
+<link href="../assets/fonts.css" rel="stylesheet"/>
+<link href="../assets/tokens.css" rel="stylesheet"/>
+<style>
+  :root, :root[data-theme] { color-scheme: light dark; background: var(--bg); color: var(--ink); }
+  :root[data-theme="light"] { color-scheme: light; }
+  :root[data-theme="dark"] { color-scheme: dark; }
+  body { margin: 0; }
+  .privacy-page {
+    max-inline-size: 46rem; margin-inline: auto; padding: var(--space-xl) var(--space-m);
+    font: 400 var(--text-m) / 1.55 var(--font-text);
+  }
+  .privacy-page a { color: var(--brand-text); text-underline-offset: 0.18em; }
+  .privacy-page a:focus-visible { outline: var(--stroke-2) solid var(--focus); outline-offset: 3px; }
+  .privacy-page h1 { margin: var(--space-m) 0 var(--space-s); font: 800 var(--text-3xl) / 1.15 var(--font-display); }
+  .privacy-page h2 { margin: var(--space-l) 0 var(--space-xs); font: 700 var(--text-xl) / 1.2 var(--font-display); }
+  .privacy-page p, .privacy-page ul { margin: 0 0 var(--space-s); }
+  .privacy-page li + li { margin-block-start: var(--space-xs); }
+</style></head>
+
+<body class=""><script></script><main aria-labelledby="privacy-title" class="privacy-page"><a class="__text_block__" href="/">На главную AntEx</a><h1 class="__text_block__" id="privacy-title">Политика обработки данных и cookie</h1><P class="">Эта страница описывает работу сайта AntEx на antex.pro и www.antex.pro. На главной можно узнать об обмене валют и найти русскоязычные Telegram-чаты.</P><section aria-labelledby="privacy-settings" class=""><h2 class="__text_block__" id="privacy-settings">Выбор аналитики</h2><P class="">На главной сайта можно разрешить аналитику кнопкой «Принять» или выбрать «Только необходимые». До согласия на аналитику контейнер Google Tag Manager и подключённые через него счётчики не загружаются.</P><P class="">Чтобы изменить решение, на главной в подвале откройте «Настройки cookie». Выберите «Только необходимые», чтобы отозвать согласие. Страница перезагрузится без аналитических тегов. Это меняет обработку при следующих загрузках. Сохранённые ранее cookie можно удалить в настройках браузера.</P></section><section aria-labelledby="privacy-analytics" class=""><h2 class="__text_block__" id="privacy-analytics">Что происходит после согласия</h2><P class="">Google Tag Manager запускает Google Аналитику 4 и Яндекс Метрику. Они помогают понять, какие разделы открывают посетители и по каким ссылкам переходят. Сервисы могут получать URL, сведения о браузере и устройстве, источник перехода и данные о действиях на странице, а также использовать cookie и идентификаторы сеанса.</P><P class="">Вебвизор в Яндекс Метрике записывает взаимодействия с сайтом, включая нажатия и прокрутку. Данные аналитики передаются Google и Яндексу. О работе сервисов подробнее в документации <a href="https://support.google.com/analytics/answer/11397207?hl=ru">Google Аналитики</a> и <a href="https://yandex.ru/support/metrica/ru/code/data-collected">Яндекс Метрики</a>.</P></section><section aria-labelledby="privacy-storage" class=""><h2 class="__text_block__" id="privacy-storage">Что сайт хранит в браузере</h2><ul class=""><li class="">Выбор темы и согласие на аналитику хранятся в локальном хранилище браузера. Эти настройки используются при следующем посещении.</li><li class="">Последний полученный набор курсов AntEx и его справочная дата хранятся в хранилище текущей вкладки, если оно доступно. При перезагрузке они помогают показать ленту, если запрос к API временно не сработает.</li></ul><P class="">Сайт и API курсов получают данные сетевого запроса, включая IP-адрес, чтобы вернуть страницу и котировки. Чтобы удалить сохранённые настройки и снимок курсов, очистите данные сайта в браузере.</P></section><section aria-labelledby="privacy-contact" class=""><h2 class="__text_block__" id="privacy-contact">Связь с AntEx</h2><P class="">По вопросам обработки данных напишите на <a href="mailto:sergeywebdev.uz@gmail.com">sergeywebdev.uz@gmail.com</a>. Также доступен <a href="https://t.me/m/ntagYZyVZjVl">публичный контакт AntEx в Telegram</a>.</P></section></main>
+<script>window.page_data = {}</script>
+<script>if (!window.frappe) window.frappe = {};</script>
+
+
+
+
+
+
+
+</body>
+
+</html>

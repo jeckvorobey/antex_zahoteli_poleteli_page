@@ -693,11 +693,7 @@
     const pause = $(".lp-rates__pause", rates);
     const date = $(".lp-rates__date", rates);
     const status = $(".lp-rates__status", rates);
-    const maxAge = 24 * 60 * 60 * 1000;
-    const refreshEvery = 15 * 60 * 1000;
-    let nextRefreshAt = 0;
-    let refreshTimer;
-    let loadingRates = false;
+    const ratesStorageKey = "zp-antex-rates-v1";
     const publicApi = "https://api.antex.pro/public/rates";
     const directOrigins = ["http://127.0.0.1:8091", "https://antex.pro", "https://www.antex.pro"];
     const ratesUrl = directOrigins.includes(location.origin) ? publicApi : "/api/antex-rates";
@@ -725,14 +721,12 @@
     }
 
     function showRates(data) {
-      const now = Date.now();
       const currencies = ["USDT", "RUB", "THB", "GEL", "VND"];
       if (!Array.isArray(data)) return false;
       const rows = data.filter(row => row && currencies.includes(row.displayCurrencySell)
         && currencies.includes(row.displayCurrencyBuy) && typeof row.priceDisplay === "string"
         && /^\d+(\.\d+)?$/.test(row.priceDisplay) && Number.isFinite(Number(row.priceDisplay))
-        && Number(row.priceDisplay) > 0 && typeof row.updatedAt === "string"
-        && Date.parse(row.updatedAt) > now - maxAge && Date.parse(row.updatedAt) <= now);
+        && Number(row.priceDisplay) > 0);
       if (!rows.length) return false;
       const items = rows.map(row => {
         const li = document.createElement("li");
@@ -743,54 +737,42 @@
         li.append("1 " + row.displayCurrencySell + " ", arrow, " ", price);
         return li;
       });
-      const times = rows.map(row => Date.parse(row.updatedAt));
-      const first = dateFormat.format(Math.min(...times));
-      const last = dateFormat.format(Math.max(...times));
-      date.title = "Обновлено " + (first === last ? last : first + " — " + last) + " МСК";
-      const parts = dateFormat.formatToParts(Math.max(...times));
-      const part = type => parts.find(item => item.type === type).value;
-      date.firstElementChild.textContent = [part("day"), part("month"), part("year")].join(".");
-      date.lastElementChild.textContent = part("hour") + ":" + part("minute") + " МСК";
+      const times = rows.map(row => typeof row.updatedAt === "string" ? Date.parse(row.updatedAt) : NaN)
+        .filter(Number.isFinite);
+      date.hidden = !times.length;
+      if (times.length) {
+        const earliest = Math.min(...times);
+        const latest = Math.max(...times);
+        const first = dateFormat.format(earliest);
+        const last = dateFormat.format(latest);
+        date.title = "Обновлено " + (first === last ? last : first + " — " + last) + " МСК";
+        const parts = dateFormat.formatToParts(latest);
+        const part = type => parts.find(item => item.type === type).value;
+        date.firstElementChild.textContent = [part("day"), part("month"), part("year")].join(".");
+        date.lastElementChild.textContent = part("hour") + ":" + part("minute") + " МСК";
+      }
       list.replaceChildren(...items);
       track.replaceChildren(list);
       status.hidden = true;
-      date.hidden = false;
       windowEl.hidden = false;
       fillRates();
-      nextRefreshAt = Math.min(nextRefreshAt, Math.min(...times) + maxAge);
-      return true;
-    }
-
-    function scheduleRates() {
-      clearTimeout(refreshTimer);
-      if (!document.hidden && !loadingRates) {
-        refreshTimer = setTimeout(loadRates, Math.max(0, nextRefreshAt - Date.now()));
-      }
+      return rows;
     }
 
     async function loadRates() {
-      if (document.hidden || loadingRates) return;
-      loadingRates = true;
-      nextRefreshAt = Date.now() + refreshEvery;
-      rates.classList.remove("is-moving");
-      list.replaceChildren();
-      track.replaceChildren(list);
-      pause.hidden = true;
-      date.hidden = true;
-      windowEl.hidden = true;
-      status.hidden = false;
-      status.textContent = "Загружаем курсы…";
+      try {
+        showRates(JSON.parse(sessionStorage.getItem(ratesStorageKey)));
+      } catch { /* Хранилище может быть недоступно. */ }
+      if (windowEl.hidden) status.textContent = "Загружаем курсы…";
       try {
         const response = await fetch(ratesUrl, {
-          credentials: "omit", cache: "no-store", signal: AbortSignal.timeout(6500),
+          credentials: "omit", cache: "no-store", signal: globalThis.AbortSignal?.timeout?.(6500),
           headers: { Accept: "application/json" },
         });
-        if (response.ok && showRates(await response.json())) return;
-      } catch { /* Ссылка в бот остаётся доступной при отказе API. */ } finally {
-        loadingRates = false;
-        scheduleRates();
-      }
-      status.textContent = "Курсы недоступны. Уточните в боте AntEx";
+        const rows = response.ok && showRates(await response.json());
+        if (rows) sessionStorage.setItem(ratesStorageKey, JSON.stringify(rows));
+      } catch { /* Сохраняем показанные данные или ссылку в бот. */ }
+      if (windowEl.hidden) status.textContent = "Курсы недоступны. Уточните в боте AntEx";
     }
 
     if (ANIM) {
@@ -803,7 +785,6 @@
         pause.setAttribute("aria-label", stopped ? "Запустить строку курсов" : "Остановить строку курсов");
       });
     }
-    document.addEventListener("visibilitychange", scheduleRates);
     loadRates();
   }
 

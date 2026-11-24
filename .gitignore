@@ -8,6 +8,9 @@
 !/dist/sitemap.xml
 !/dist/llms.txt
 !/dist/llms-full.txt
+!/dist/privacy/
+/dist/privacy/*
+!/dist/privacy/index.html
 !/dist/assets/
 /dist/assets/*
 !/dist/assets/*.css
