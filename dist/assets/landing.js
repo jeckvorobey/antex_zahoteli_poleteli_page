@@ -695,7 +695,7 @@
     const status = $(".lp-rates__status", rates);
     const ratesStorageKey = "zp-antex-rates-v1";
     const publicApi = "https://api.antex.pro/public/rates";
-    const directOrigins = ["http://127.0.0.1:8091", "https://antex.pro", "https://www.antex.pro"];
+    const directOrigins = ["https://antex.pro", "https://www.antex.pro"];
     const ratesUrl = directOrigins.includes(location.origin) ? publicApi : "/api/antex-rates";
     const priceFormat = new Intl.NumberFormat("ru-RU", { maximumFractionDigits: 8 });
     const dateFormat = new Intl.DateTimeFormat("ru-RU", {
