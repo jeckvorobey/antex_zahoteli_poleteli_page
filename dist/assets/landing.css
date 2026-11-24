@@ -1001,7 +1001,11 @@ html:not(.lp-scrub) .lp-story__text { font-size: clamp(1.25rem, 1rem + 0.8cqi, 1
   display: grid; gap: .12em; inline-size: max-content; color: var(--antex-muted);
   font: 600 var(--text-xs) / 1.2 var(--font-text); font-variant-numeric: tabular-nums; white-space: nowrap;
 }
-.lp-rates__snapshot { margin-inline-start: 0.25em; color: var(--antex-gold-text); }
+.lp-rates__status {
+  grid-column: 1 / -2; margin: 0; color: var(--antex-muted);
+  font: 600 var(--text-s) / 1.3 var(--font-text);
+}
+.lp-rates__exchange { grid-column: -2 / -1; }
 .lp-rates__list {
   display: flex; flex-wrap: wrap; align-items: center; gap: var(--space-xs) var(--space-l);
   list-style: none; margin: 0; padding: 0; white-space: nowrap;
@@ -1146,3 +1150,29 @@ html.lp-anim .lp-marquee--big .lp-marquee__track { animation-duration: 60s; anim
   .lp-dir__pin, .lp-stories__pin { position: static !important; block-size: auto !important; }
   .lp-story { transform: none !important; opacity: 1 !important; }
 }
+
+/* Панель выбора аналитики использует цвета текущей темы сайта. */
+.lp-analytics {
+  position: fixed;
+  z-index: calc(var(--z-header) - 3);
+  inset-inline: var(--lp-gutter);
+  inset-block-end: max(var(--space-s), env(safe-area-inset-bottom, 0px));
+  inline-size: auto;
+  max-inline-size: 34rem;
+  max-block-size: calc(100dvh - var(--lp-header-height, var(--header-h)) - 2 * var(--space-s));
+  display: grid;
+  gap: var(--space-xs);
+  overflow-y: auto;
+  padding: var(--space-m);
+  border: var(--stroke-1) solid var(--line);
+  border-radius: var(--radius-l);
+  background: var(--surface-raised);
+  box-shadow: var(--shadow-2);
+  color: var(--ink);
+}
+.lp-analytics h2 { margin: 0; font-size: var(--text-l); }
+.lp-analytics p { margin: 0; color: var(--ink-muted); font-size: var(--text-s); line-height: 1.45; }
+.lp-analytics__actions { display: flex; flex-wrap: wrap; gap: var(--space-xs); }
+.lp-analytics__actions .zp-btn { min-block-size: var(--tap-min); }
+.lp-analytics-settings { padding: 0; border: 0; background: transparent; font: inherit; cursor: pointer; }
+@media print { .lp-analytics, .lp-analytics-settings { display: none !important; } }

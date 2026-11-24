@@ -692,6 +692,15 @@
     const list = $(".lp-rates__list", rates);
     const pause = $(".lp-rates__pause", rates);
     const date = $(".lp-rates__date", rates);
+    const status = $(".lp-rates__status", rates);
+    const maxAge = 24 * 60 * 60 * 1000;
+    const refreshEvery = 15 * 60 * 1000;
+    let nextRefreshAt = 0;
+    let refreshTimer;
+    let loadingRates = false;
+    const publicApi = "https://api.antex.pro/public/rates";
+    const directOrigins = ["http://127.0.0.1:8091", "https://antex.pro", "https://www.antex.pro"];
+    const ratesUrl = directOrigins.includes(location.origin) ? publicApi : "/api/antex-rates";
     const priceFormat = new Intl.NumberFormat("ru-RU", { maximumFractionDigits: 8 });
     const dateFormat = new Intl.DateTimeFormat("ru-RU", {
       timeZone: "Europe/Moscow", dateStyle: "short", timeStyle: "short",
@@ -699,7 +708,7 @@
 
     // Полный первый список остаётся доступен читалкам, копии заполняют остаток экрана и шов.
     function fillRates() {
-      if (!ANIM) return;
+      if (!ANIM || windowEl.hidden) return;
       rates.classList.add("is-moving");
       const period = list.getBoundingClientRect().width;
       if (!period) return;
@@ -716,12 +725,14 @@
     }
 
     function showRates(data) {
+      const now = Date.now();
       const currencies = ["USDT", "RUB", "THB", "GEL", "VND"];
       if (!Array.isArray(data)) return false;
       const rows = data.filter(row => row && currencies.includes(row.displayCurrencySell)
         && currencies.includes(row.displayCurrencyBuy) && typeof row.priceDisplay === "string"
         && /^\d+(\.\d+)?$/.test(row.priceDisplay) && Number.isFinite(Number(row.priceDisplay))
-        && Number(row.priceDisplay) > 0 && typeof row.updatedAt === "string" && Number.isFinite(Date.parse(row.updatedAt)));
+        && Number(row.priceDisplay) > 0 && typeof row.updatedAt === "string"
+        && Date.parse(row.updatedAt) > now - maxAge && Date.parse(row.updatedAt) <= now);
       if (!rows.length) return false;
       const items = rows.map(row => {
         const li = document.createElement("li");
@@ -742,19 +753,44 @@
       date.lastElementChild.textContent = part("hour") + ":" + part("minute") + " МСК";
       list.replaceChildren(...items);
       track.replaceChildren(list);
+      status.hidden = true;
+      date.hidden = false;
+      windowEl.hidden = false;
       fillRates();
+      nextRefreshAt = Math.min(nextRefreshAt, Math.min(...times) + maxAge);
       return true;
     }
 
-    async function loadRates() {
-      for (const url of ["/api/antex-rates", "https://api.antex.pro/public/rates"]) {
-        try {
-          const response = await fetch(url, {
-            credentials: "omit", signal: AbortSignal.timeout(6500), headers: { Accept: "application/json" },
-          });
-          if (response.ok && showRates(await response.json())) return;
-        } catch { /* Датированный снимок остаётся доступным при сетевой ошибке. */ }
+    function scheduleRates() {
+      clearTimeout(refreshTimer);
+      if (!document.hidden && !loadingRates) {
+        refreshTimer = setTimeout(loadRates, Math.max(0, nextRefreshAt - Date.now()));
       }
+    }
+
+    async function loadRates() {
+      if (document.hidden || loadingRates) return;
+      loadingRates = true;
+      nextRefreshAt = Date.now() + refreshEvery;
+      rates.classList.remove("is-moving");
+      list.replaceChildren();
+      track.replaceChildren(list);
+      pause.hidden = true;
+      date.hidden = true;
+      windowEl.hidden = true;
+      status.hidden = false;
+      status.textContent = "Загружаем курсы…";
+      try {
+        const response = await fetch(ratesUrl, {
+          credentials: "omit", cache: "no-store", signal: AbortSignal.timeout(6500),
+          headers: { Accept: "application/json" },
+        });
+        if (response.ok && showRates(await response.json())) return;
+      } catch { /* Ссылка в бот остаётся доступной при отказе API. */ } finally {
+        loadingRates = false;
+        scheduleRates();
+      }
+      status.textContent = "Курсы недоступны. Уточните в боте AntEx";
     }
 
     if (ANIM) {
@@ -767,17 +803,8 @@
         pause.setAttribute("aria-label", stopped ? "Запустить строку курсов" : "Остановить строку курсов");
       });
     }
-    if (IO) {
-      const nearRates = new IntersectionObserver(entries => {
-        if (entries.some(entry => entry.isIntersecting)) {
-          nearRates.disconnect();
-          loadRates();
-        }
-      }, { rootMargin: "100% 0px" });
-      nearRates.observe(rates);
-    } else {
-      loadRates();
-    }
+    document.addEventListener("visibilitychange", scheduleRates);
+    loadRates();
   }
 
   const passBox = $(".lp-hero__pass");

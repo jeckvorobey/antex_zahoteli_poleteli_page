@@ -4,6 +4,10 @@
 !/dist/
 /dist/*
 !/dist/index.html
+!/dist/robots.txt
+!/dist/sitemap.xml
+!/dist/llms.txt
+!/dist/llms-full.txt
 !/dist/assets/
 /dist/assets/*
 !/dist/assets/*.css

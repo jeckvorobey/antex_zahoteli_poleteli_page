@@ -1,0 +1,21 @@
+# AntEx и «Захотели — Полетели»
+
+> На сайте AntEx можно узнать об обмене рублей и USDT на баты, донги и лари и открыть русскоязычные Telegram-чаты по городам Грузии, Вьетнама и Таиланда.
+
+## Страница
+
+- [Главная](https://www.antex.pro/): обмен валют и каталог Telegram-сообществ.
+- [Обмен валют AntEx](https://www.antex.pro/#antex): валюты, условия и лента курсов из API. Конкретную сумму и способ получения уточняют в боте.
+- [Каталог чатов](https://www.antex.pro/#communities): фильтры по стране, городу и задаче.
+- [Как найти чат города](https://www.antex.pro/#how): три шага в боте «Полезные чаты».
+- [Частые вопросы](https://www.antex.pro/#faq): обмен, лари в Батуми и выбор городского чата.
+
+## Telegram
+
+- [Бот обмена AntEx](https://t.me/tt_exchenge_bot?start=mkt_TOUENUFH39)
+- [Бот «Полезные чаты»](https://t.me/zahotelipoleteli_chats_bot?start=site_header)
+- [Канал AntEx](https://t.me/AntEx_change)
+
+## Optional
+
+- [Подробное описание и ссылки на сообщества](https://www.antex.pro/llms-full.txt)
